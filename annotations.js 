@@ -1,0 +1,24 @@
+let annotations = [];
+
+function addAnnotation(x, y, text) {
+    annotations.push({ x, y, text });
+    drawImageWithGoldenRatio(currentImage);
+}
+
+canvas.addEventListener('dblclick', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left - translateX) / scale;
+    const y = (e.clientY - rect.top - translateY) / scale;
+    const text = prompt('Enter annotation text:');
+    if (text) {
+        addAnnotation(x, y, text);
+    }
+});
+
+function drawAnnotations(ctx) {
+    ctx.fillStyle = 'red';
+    ctx.font = '16px Arial';
+    annotations.forEach(annotation => {
+        ctx.fillText(annotation.text, annotation.x, annotation.y);
+    });
+}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golden Celestial Ratio</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://jscolor.com/release/2.4/jscolor.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 offset-md-2 text-center">
+                <h1>Golden Celestial Ratio</h1>
+                <input type="file" id="upload" accept="image/*" class="form-control">
+                <button id="downloadBtn" class="btn btn-primary mt-3">Download Image</button>
+                <input class="jscolor mt-3" id="colorPicker" value="ffd700">
+                <div id="filters" class="mt-3">
+                    <button onclick="applyFilter('none')" class="btn btn-secondary">None</button>
+                    <button onclick="applyFilter('grayscale(100%)')" class="btn btn-secondary">Grayscale</button>
+                    <button onclick="applyFilter('sepia(100%)')" class="btn btn-secondary">Sepia</button>
+                    <button onclick="applyFilter('brightness(150%)')" class="btn btn-secondary">Brightness</button>
+                </div>
+                <div id="patterns" class="mt-3">
+                    <button onclick="setPattern('spiral')" class="btn btn-secondary">Spiral</button>
+                    <button onclick="setPattern('rectangle')" class="btn btn-secondary">Rectangle</button>
+                    <button onclick="setPattern('triangle')" class="btn btn-secondary">Triangle</button>
+                </div>
+                <canvas id="canvas" class="mt-3"></canvas>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script src="annotations.js"></script>
+    <script src="golden-ratio.js"></script>
+</body>
+</html>
