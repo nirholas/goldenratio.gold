@@ -13,14 +13,21 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 canvas.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    startX = e.clientX - translateX;
-    startY = e.clientY - translateY;
+    if (isOverlaySelected(e)) {
+        isDraggingOverlay = true;
+        startX = e.clientX;
+        startY = e.clientY;
+    } else {
+        isDragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+    }
     canvas.style.cursor = 'grabbing';
 });
 
 canvas.addEventListener('mouseup', () => {
     isDragging = false;
+    isDraggingOverlay = false;
     canvas.style.cursor = 'grab';
 });
 
@@ -29,18 +36,33 @@ canvas.addEventListener('mousemove', (e) => {
         translateX = e.clientX - startX;
         translateY = e.clientY - startY;
         drawImageWithGoldenRatio(currentImage);
+    } else if (isDraggingOverlay) {
+        overlayTranslateX += e.clientX - startX;
+        overlayTranslateY += e.clientY - startY;
+        startX = e.clientX;
+        startY = e.clientY;
+        drawImageWithGoldenRatio(currentImage);
     }
 });
 
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const zoom = e.deltaY * -0.01;
-    scale += zoom;
-    scale = Math.min(Math.max(0.5, scale), 3);
+    if (isOverlaySelected(e)) {
+        overlayScale += zoom;
+        overlayScale = Math.min(Math.max(0.5, overlayScale), 3);
+    } else {
+        scale += zoom;
+        scale = Math.min(Math.max(0.5, scale), 3);
+    }
     drawImageWithGoldenRatio(currentImage);
 });
 
 let currentImage;
+let overlayTranslateX = 0, overlayTranslateY = 0;
+let overlayScale = 1;
+let overlayRotation = 0;
+let isDraggingOverlay = false;
 
 function handleImage(event) {
     const reader = new FileReader();
@@ -72,13 +94,34 @@ function drawImageWithGoldenRatio(img) {
         ctx.translate(-img.width, 0);
     }
     ctx.drawImage(img, 0, 0, width, height);
-    ctx.drawImage(overlayImg, 0, 0, width, height);  // Draw the golden ratio overlay
+    if (currentPattern === 'spiral') {
+        drawOverlay(ctx, width, height);
+    }
     drawGoldenPattern(ctx, width, height);
     drawAnnotations(ctx);
     if (invert) {
         invertColorsOnCanvas();
     }
     ctx.restore();
+}
+
+function drawOverlay(ctx, width, height) {
+    ctx.save();
+    ctx.translate(overlayTranslateX, overlayTranslateY);
+    ctx.scale(overlayScale, overlayScale);
+    ctx.rotate(overlayRotation * Math.PI / 180);
+    ctx.drawImage(overlayImg, 0, 0, width, height);
+    ctx.restore();
+}
+
+function isOverlaySelected(event) {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    // Check if the click is within the overlay bounds
+    // Adjust the bounds check based on your specific needs
+    return x >= overlayTranslateX && x <= overlayTranslateX + overlayImg.width * overlayScale &&
+           y >= overlayTranslateY && y <= overlayTranslateY + overlayImg.height * overlayScale;
 }
 
 function drawGoldenPattern(ctx, width, height) {
@@ -130,6 +173,10 @@ function resetCanvas() {
     translateX = 0;
     translateY = 0;
     scale = 1;
+    overlayTranslateX = 0;
+    overlayTranslateY = 0;
+    overlayScale = 1;
+    overlayRotation = 0;
     currentImage = originalImage;
     drawImageWithGoldenRatio(currentImage);
 }
