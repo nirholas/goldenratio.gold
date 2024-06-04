@@ -3,6 +3,11 @@ let startX, startY;
 let translateX = 0, translateY = 0;
 let scale = 1;
 let currentPattern = 'spiral';
+let flip = false;
+let invert = false;
+let originalImage = null;
+const overlayImg = new Image();
+overlayImg.src = 'overlay.png';  // Load the golden ratio overlay
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -43,6 +48,7 @@ function handleImage(event) {
         const img = new Image();
         img.onload = function() {
             currentImage = img;
+            originalImage = img;
             drawImageWithGoldenRatio(img);
         }
         img.src = event.target.result;
@@ -61,9 +67,17 @@ function drawImageWithGoldenRatio(img) {
     ctx.save();
     ctx.translate(translateX, translateY);
     ctx.scale(scale, scale);
+    if (flip) {
+        ctx.scale(-1, 1);
+        ctx.translate(-img.width, 0);
+    }
     ctx.drawImage(img, 0, 0, width, height);
+    ctx.drawImage(overlayImg, 0, 0, width, height);  // Draw the golden ratio overlay
     drawGoldenPattern(ctx, width, height);
     drawAnnotations(ctx);
+    if (invert) {
+        invertColorsOnCanvas();
+    }
     ctx.restore();
 }
 
@@ -98,6 +112,37 @@ function applyFilter(filter) {
 function setPattern(pattern) {
     currentPattern = pattern;
     drawImageWithGoldenRatio(currentImage);
+}
+
+function flipAxis() {
+    flip = !flip;
+    drawImageWithGoldenRatio(currentImage);
+}
+
+function invertColors() {
+    invert = !invert;
+    drawImageWithGoldenRatio(currentImage);
+}
+
+function resetCanvas() {
+    flip = false;
+    invert = false;
+    translateX = 0;
+    translateY = 0;
+    scale = 1;
+    currentImage = originalImage;
+    drawImageWithGoldenRatio(currentImage);
+}
+
+function invertColorsOnCanvas() {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        data[i] = 255 - data[i];       // Red
+        data[i + 1] = 255 - data[i + 1]; // Green
+        data[i + 2] = 255 - data[i + 2]; // Blue
+    }
+    ctx.putImageData(imageData, 0, 0);
 }
 
 document.getElementById('upload').addEventListener('change', handleImage, false);
