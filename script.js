@@ -2,19 +2,19 @@ let isDragging = false;
 let startX, startY;
 let translateX = 0, translateY = 0;
 let scale = 1;
-let currentPattern = 'spiral';
 let flip = false;
 let invert = false;
 let originalImage = null;
-const overlayImg = new Image();
-overlayImg.src = 'overlay.png';  // Load the golden ratio overlay
+const overlays = [];
+const overlayImgSrc = 'overlay.png';  // Path to your golden ratio overlay image
+let currentOverlay = null;
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 canvas.addEventListener('mousedown', (e) => {
     if (isOverlaySelected(e)) {
-        isDraggingOverlay = true;
+        isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
     } else {
@@ -27,42 +27,38 @@ canvas.addEventListener('mousedown', (e) => {
 
 canvas.addEventListener('mouseup', () => {
     isDragging = false;
-    isDraggingOverlay = false;
     canvas.style.cursor = 'grab';
 });
 
 canvas.addEventListener('mousemove', (e) => {
     if (isDragging) {
-        translateX = e.clientX - startX;
-        translateY = e.clientY - startY;
-        drawImageWithGoldenRatio(currentImage);
-    } else if (isDraggingOverlay) {
-        overlayTranslateX += e.clientX - startX;
-        overlayTranslateY += e.clientY - startY;
-        startX = e.clientX;
-        startY = e.clientY;
-        drawImageWithGoldenRatio(currentImage);
+        if (currentOverlay) {
+            currentOverlay.x += e.clientX - startX;
+            currentOverlay.y += e.clientY - startY;
+            startX = e.clientX;
+            startY = e.clientY;
+        } else {
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+        }
+        drawImageWithOverlays(currentImage);
     }
 });
 
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const zoom = e.deltaY * -0.01;
-    if (isOverlaySelected(e)) {
-        overlayScale += zoom;
-        overlayScale = Math.min(Math.max(0.5, overlayScale), 3);
+    if (currentOverlay) {
+        currentOverlay.scale += zoom;
+        currentOverlay.scale = Math.min(Math.max(0.5, currentOverlay.scale), 3);
     } else {
         scale += zoom;
         scale = Math.min(Math.max(0.5, scale), 3);
     }
-    drawImageWithGoldenRatio(currentImage);
+    drawImageWithOverlays(currentImage);
 });
 
 let currentImage;
-let overlayTranslateX = 0, overlayTranslateY = 0;
-let overlayScale = 1;
-let overlayRotation = 0;
-let isDraggingOverlay = false;
 
 function handleImage(event) {
     const reader = new FileReader();
@@ -71,19 +67,21 @@ function handleImage(event) {
         img.onload = function() {
             currentImage = img;
             originalImage = img;
-            drawImageWithGoldenRatio(img);
+            canvas.width = img.width;
+            canvas.height = img.height;
+            drawImageWithOverlays(img);
         }
         img.src = event.target.result;
     }
     reader.readAsDataURL(event.target.files[0]);
 }
 
-function drawImageWithGoldenRatio(img) {
+function drawImageWithOverlays(img) {
     const width = img.width * scale;
     const height = img.height * scale;
 
-    canvas.width = window.innerWidth * 0.8;
-    canvas.height = window.innerHeight * 0.8;
+    canvas.width = width;
+    canvas.height = height;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
@@ -94,51 +92,53 @@ function drawImageWithGoldenRatio(img) {
         ctx.translate(-img.width, 0);
     }
     ctx.drawImage(img, 0, 0, width, height);
-    if (currentPattern === 'spiral') {
-        drawOverlay(ctx, width, height);
-    }
-    drawGoldenPattern(ctx, width, height);
-    drawAnnotations(ctx);
+    overlays.forEach(overlay => drawOverlay(ctx, overlay));
     if (invert) {
         invertColorsOnCanvas();
     }
     ctx.restore();
 }
 
-function drawOverlay(ctx, width, height) {
+function drawOverlay(ctx, overlay) {
     ctx.save();
-    ctx.translate(overlayTranslateX, overlayTranslateY);
-    ctx.scale(overlayScale, overlayScale);
-    ctx.rotate(overlayRotation * Math.PI / 180);
-    ctx.drawImage(overlayImg, 0, 0, width, height);
+    ctx.translate(overlay.x, overlay.y);
+    ctx.scale(overlay.scale, overlay.scale);
+    ctx.rotate(overlay.rotation * Math.PI / 180);
+    const img = new Image();
+    img.src = overlayImgSrc;
+    ctx.drawImage(img, 0, 0, overlay.width, overlay.height);
     ctx.restore();
+}
+
+function addOverlay() {
+    const overlay = {
+        x: 0,
+        y: 0,
+        scale: 1,
+        rotation: 0,
+        width: canvas.width,
+        height: canvas.height
+    };
+    overlays.push(overlay);
+    currentOverlay = overlay;
+    drawImageWithOverlays(currentImage);
 }
 
 function isOverlaySelected(event) {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    // Check if the click is within the overlay bounds
-    // Adjust the bounds check based on your specific needs
-    return x >= overlayTranslateX && x <= overlayTranslateX + overlayImg.width * overlayScale &&
-           y >= overlayTranslateY && y <= overlayTranslateY + overlayImg.height * overlayScale;
-}
-
-function drawGoldenPattern(ctx, width, height) {
-    const color = document.getElementById('colorPicker').value;
-    ctx.strokeStyle = `#${color}`;
-
-    switch(currentPattern) {
-        case 'spiral':
-            drawGoldenSpiral(ctx, width, height);
-            break;
-        case 'rectangle':
-            drawGoldenRectangle(ctx, width, height);
-            break;
-        case 'triangle':
-            drawGoldenTriangle(ctx, width, height);
-            break;
-    }
+    // Check if the click is within any overlay bounds
+    return overlays.some(overlay => {
+        const overlayX = overlay.x;
+        const overlayY = overlay.y;
+        const overlayWidth = overlay.width * overlay.scale;
+        const overlayHeight = overlay.height * overlay.scale;
+        const isSelected = x >= overlayX && x <= overlayX + overlayWidth &&
+                           y >= overlayY && y <= overlayY + overlayHeight;
+        if (isSelected) currentOverlay = overlay;
+        return isSelected;
+    });
 }
 
 function downloadImage() {
@@ -152,19 +152,14 @@ function applyFilter(filter) {
     canvas.style.filter = filter;
 }
 
-function setPattern(pattern) {
-    currentPattern = pattern;
-    drawImageWithGoldenRatio(currentImage);
-}
-
 function flipAxis() {
     flip = !flip;
-    drawImageWithGoldenRatio(currentImage);
+    drawImageWithOverlays(currentImage);
 }
 
 function invertColors() {
     invert = !invert;
-    drawImageWithGoldenRatio(currentImage);
+    drawImageWithOverlays(currentImage);
 }
 
 function resetCanvas() {
@@ -173,12 +168,10 @@ function resetCanvas() {
     translateX = 0;
     translateY = 0;
     scale = 1;
-    overlayTranslateX = 0;
-    overlayTranslateY = 0;
-    overlayScale = 1;
-    overlayRotation = 0;
+    overlays.length = 0;
+    currentOverlay = null;
     currentImage = originalImage;
-    drawImageWithGoldenRatio(currentImage);
+    drawImageWithOverlays(currentImage);
 }
 
 function invertColorsOnCanvas() {
@@ -193,4 +186,5 @@ function invertColorsOnCanvas() {
 }
 
 document.getElementById('upload').addEventListener('change', handleImage, false);
+document.getElementById('addOverlayBtn').addEventListener('click', addOverlay, false);
 document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
