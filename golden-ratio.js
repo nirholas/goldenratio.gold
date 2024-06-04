@@ -31,4 +31,17 @@ function drawGoldenRectangle(ctx, width, height) {
 
 function drawGoldenTriangle(ctx, width, height) {
     const phi = (1 + Math.sqrt(5)) / 2;
-    let a = 
+    let a = 0, b = 0, c = width;
+
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+        ctx.moveTo(a, b);
+        ctx.lineTo(a + c, b);
+        ctx.lineTo(a + c / phi, b + c * Math.sqrt(3) / 2);
+        ctx.closePath();
+        a += c / phi;
+        b += c * Math.sqrt(3) / 2 / phi;
+        c /= phi;
+    }
+    ctx.stroke();
+}
