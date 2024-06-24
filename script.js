@@ -12,6 +12,10 @@ let currentOverlay = null;
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
+// Variables for touch gestures
+let initialDistance = 0;
+let initialAngle = 0;
+
 canvas.addEventListener('mousedown', (e) => {
     if (isOverlaySelected(e)) {
         isDragging = true;
@@ -57,6 +61,65 @@ canvas.addEventListener('wheel', (e) => {
     }
     drawImageWithOverlays(currentImage);
 });
+
+canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1 && isOverlaySelected(e.touches[0])) {
+        isDragging = true;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        canvas.style.cursor = 'grabbing';
+    } else if (e.touches.length === 2 && currentOverlay) {
+        initialDistance = getDistance(e.touches);
+        initialAngle = getAngle(e.touches);
+    }
+});
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (isDragging && e.touches.length === 1) {
+        const touch = e.touches[0];
+        if (currentOverlay) {
+            currentOverlay.x += touch.clientX - startX;
+            currentOverlay.y += touch.clientY - startY;
+            startX = touch.clientX;
+            startY = touch.clientY;
+        } else {
+            translateX = touch.clientX - startX;
+            translateY = touch.clientY - startY;
+        }
+        drawImageWithOverlays(currentImage);
+    } else if (e.touches.length === 2 && currentOverlay) {
+        const newDistance = getDistance(e.touches);
+        const newAngle = getAngle(e.touches);
+
+        currentOverlay.scale *= newDistance / initialDistance;
+        currentOverlay.rotation += newAngle - initialAngle;
+
+        initialDistance = newDistance;
+        initialAngle = newAngle;
+
+        drawImageWithOverlays(currentImage);
+    }
+});
+
+canvas.addEventListener('touchend', (e) => {
+    isDragging = false;
+    canvas.style.cursor = 'grab';
+});
+
+function getDistance(touches) {
+    const [touch1, touch2] = touches;
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getAngle(touches) {
+    const [touch1, touch2] = touches;
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.atan2(dy, dx) * (180 / Math.PI);
+}
 
 let currentImage;
 
