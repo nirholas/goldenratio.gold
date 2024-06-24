@@ -263,7 +263,7 @@ function toggleFullScreen() {
 document.getElementById('upload').addEventListener('change', handleImage, false);
 document.getElementById('addOverlayBtn').addEventListener('click', () => addOverlay('overlay.png'), false);
 document.getElementById('addMiladyRatioBtn').addEventListener('click', () => addOverlay('miladyratio.png'), false);
-document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addOverlay('eyes.jpg'), false);
+document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addOverlay('eyes.png'), false);
 document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
 document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
 document.getElementById('saveBtn').addEventListener('click', saveProject, false);
