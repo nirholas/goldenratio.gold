@@ -6,6 +6,7 @@ let flip = false;
 let invert = false;
 let originalImage = null;
 const overlays = [];
+const overlayImgSrc = 'overlay.png';  // Default overlay image
 let currentOverlay = null;
 
 // Variables for touch gestures
@@ -265,8 +266,8 @@ document.getElementById('addMiladyRatioBtn').addEventListener('click', () => add
 document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addOverlay('eyes.png'), false);
 document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
 document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
-document.getElementById('undoBtn').addEventListener('click', undo, false);
-document.getElementById('redoBtn').addEventListener('click', redo, false);
+document.getElementById('saveBtn').addEventListener('click', saveProject, false);
+document.getElementById('loadBtn').addEventListener('click', loadProject, false);
 
 // Event listener for swipe gestures
 let touchstartX = 0;
@@ -316,150 +317,67 @@ function redo() {
     }
 }
 
-// Image Editing Functions
-function cropImage() {
-    // Implement crop image functionality
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z') {
+        undo();
+    }
+    if (e.ctrlKey && e.key === 'y') {
+        redo();
+    }
+});
+
+// Save/Load Project Functionality
+function saveProject() {
+    const projectData = {
+        image: currentImage.src,
+        overlays: overlays,
+        annotations: annotations,
+        scale: scale,
+        translateX: translateX,
+        translateY: translateY,
+        flip: flip,
+        invert: invert,
+    };
+    localStorage.setItem('savedProject', JSON.stringify(projectData));
 }
 
-function removeBackground() {
-    // Implement remove background functionality
+function loadProject() {
+    const savedProject = JSON.parse(localStorage.getItem('savedProject'));
+    if (savedProject) {
+        const img = new Image();
+        img.onload = function() {
+            currentImage = img;
+            originalImage = img;
+            overlays.splice(0, overlays.length, ...savedProject.overlays);
+            annotations.splice(0, annotations.length, ...savedProject.annotations);
+            scale = savedProject.scale;
+            translateX = savedProject.translateX;
+            translateY = savedProject.translateY;
+            flip = savedProject.flip;
+            invert = savedProject.invert;
+            drawImageWithOverlays(img);
+        }
+        img.src = savedProject.image;
+    }
 }
 
-function adjustExposure() {
-    // Implement adjust exposure functionality
+// Layer Management
+function moveLayerUp() {
+    const index = overlays.indexOf(currentOverlay);
+    if (index > 0) {
+        const temp = overlays[index - 1];
+        overlays[index - 1] = currentOverlay;
+        overlays[index] = temp;
+        drawImageWithOverlays(currentImage);
+    }
 }
 
-function adjustBrilliance() {
-    // Implement adjust brilliance functionality
-}
-
-function adjustHighlights() {
-    // Implement adjust highlights functionality
-}
-
-function adjustShadows() {
-    // Implement adjust shadows functionality
-}
-
-function adjustContrast() {
-    // Implement adjust contrast functionality
-}
-
-function adjustBrightness() {
-    // Implement adjust brightness functionality
-}
-
-function adjustBlackPoint() {
-    // Implement adjust black point functionality
-}
-
-function adjustSaturation() {
-    // Implement adjust saturation functionality
-}
-
-function adjustVibrance() {
-    // Implement adjust vibrance functionality
-}
-
-function adjustWarmth() {
-    // Implement adjust warmth functionality
-}
-
-function adjustTint() {
-    // Implement adjust tint functionality
-}
-
-function adjustSharpness() {
-    // Implement adjust sharpness functionality
-}
-
-function adjustDefinition() {
-    // Implement adjust definition functionality
-}
-
-function adjustNoiseReduction() {
-    // Implement adjust noise reduction functionality
-}
-
-function adjustVignette() {
-    // Implement adjust vignette functionality
-}
-
-// Basic Tools
-function useBrush() {
-    // Implement brush functionality
-}
-
-function usePencil() {
-    // Implement pencil functionality
-}
-
-function useEraser() {
-    // Implement eraser functionality
-}
-
-function useMarquee() {
-    // Implement marquee functionality
-}
-
-// Selection Tools
-function selectArea() {
-    // Implement area selection functionality
-}
-
-// Filters and Effects
-function applyBlur() {
-    // Implement blur functionality
-}
-
-function applyPainterly() {
-    // Implement painterly effect functionality
-}
-
-function applyDistortion() {
-    // Implement distortion functionality
-}
-
-function applyTexture() {
-    // Implement texture functionality
-}
-
-// Retouching
-function correctShadows() {
-    // Implement shadow correction functionality
-}
-
-function retouchLight() {
-    // Implement light retouch functionality
-}
-
-// Collage Creation
-function createCollage() {
-    // Implement collage creation functionality
-}
-
-// Background Extension
-function extendBackground() {
-    // Implement background extension functionality
-}
-
-// One-Step Edits
-function applyPreset() {
-    // Implement preset application functionality
-}
-
-function removeObjects() {
-    // Implement object removal functionality
-}
-
-function cropAndRotate() {
-    // Implement crop and rotate functionality
-}
-
-function adjustPerspectives() {
-    // Implement perspective adjustment functionality
-}
-
-function selectElements() {
-    // Implement element selection functionality
+function moveLayerDown() {
+    const index = overlays.indexOf(currentOverlay);
+    if (index < overlays.length - 1) {
+        const temp = overlays[index + 1];
+        overlays[index + 1] = currentOverlay;
+        overlays[index] = temp;
+        drawImageWithOverlays(currentImage);
+    }
 }

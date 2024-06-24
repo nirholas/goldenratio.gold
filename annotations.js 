@@ -1,57 +1,24 @@
-// annotations.js
-
 let annotations = [];
 
 function addAnnotation(x, y, text) {
     annotations.push({ x, y, text });
-    drawAnnotations();
+    drawImageWithGoldenRatio(currentImage);
 }
 
-function drawAnnotations() {
+canvas.addEventListener('dblclick', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left - translateX) / scale;
+    const y = (e.clientY - rect.top - translateY) / scale;
+    const text = prompt('Enter annotation text:');
+    if (text) {
+        addAnnotation(x, y, text);
+    }
+});
+
+function drawAnnotations(ctx) {
+    ctx.fillStyle = 'red';
+    ctx.font = '16px Arial';
     annotations.forEach(annotation => {
-        ctx.font = '16px Arial';
-        ctx.fillStyle = 'red';
         ctx.fillText(annotation.text, annotation.x, annotation.y);
     });
-}
-
-// Example to integrate with the main image editing functionalities
-function handleImage(event) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = new Image();
-        img.onload = function() {
-            currentImage = img;
-            originalImage = img;
-            canvas.width = img.width;
-            canvas.height = img.height;
-            drawImageWithOverlays(img);
-        }
-        img.src = event.target.result;
-    }
-    reader.readAsDataURL(event.target.files[0]);
-}
-
-function drawImageWithOverlays(img) {
-    const width = img.width * scale;
-    const height = img.height * scale;
-
-    canvas.width = width;
-    canvas.height = height;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    ctx.translate(translateX, translateY);
-    ctx.scale(scale, scale);
-    if (flip) {
-        ctx.scale(-1, 1);
-        ctx.translate(-img.width, 0);
-    }
-    ctx.drawImage(img, 0, 0, width, height);
-    overlays.forEach(overlay => drawOverlay(ctx, overlay));
-    if (invert) {
-        invertColorsOnCanvas();
-    }
-    ctx.restore();
-    drawAnnotations(); // Draw annotations on top of the image and overlays
 }
