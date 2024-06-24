@@ -185,6 +185,133 @@ function invertColorsOnCanvas() {
     ctx.putImageData(imageData, 0, 0);
 }
 
+// Function to toggle fullscreen mode for the canvas
+function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+        canvas.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
 document.getElementById('upload').addEventListener('change', handleImage, false);
 document.getElementById('addOverlayBtn').addEventListener('click', addOverlay, false);
 document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
+document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
+document.getElementById('saveBtn').addEventListener('click', saveProject, false);
+document.getElementById('loadBtn').addEventListener('click', loadProject, false);
+
+// Event listener for swipe gestures
+let touchstartX = 0;
+let touchendX = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+    touchstartX = e.changedTouches[0].screenX;
+});
+
+canvas.addEventListener('touchend', (e) => {
+    touchendX = e.changedTouches[0].screenX;
+    handleSwipeGesture();
+});
+
+function handleSwipeGesture() {
+    if (touchendX < touchstartX) {
+        // Swipe left action
+    }
+    if (touchendX > touchstartX) {
+        // Swipe right action
+    }
+}
+
+// Undo/Redo functionality
+const actionStack = [];
+let actionIndex = -1;
+
+function pushAction(action) {
+    actionStack.splice(actionIndex + 1);
+    actionStack.push(action);
+    actionIndex++;
+}
+
+function undo() {
+    if (actionIndex >= 0) {
+        const action = actionStack[actionIndex];
+        // Perform undo operation based on action
+        actionIndex--;
+    }
+}
+
+function redo() {
+    if (actionIndex < actionStack.length - 1) {
+        actionIndex++;
+        const action = actionStack[actionIndex];
+        // Perform redo operation based on action
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z') {
+        undo();
+    }
+    if (e.ctrlKey && e.key === 'y') {
+        redo();
+    }
+});
+
+// Save/Load Project Functionality
+function saveProject() {
+    const projectData = {
+        image: currentImage.src,
+        overlays: overlays,
+        annotations: annotations,
+        scale: scale,
+        translateX: translateX,
+        translateY: translateY,
+        flip: flip,
+        invert: invert,
+    };
+    localStorage.setItem('savedProject', JSON.stringify(projectData));
+}
+
+function loadProject() {
+    const savedProject = JSON.parse(localStorage.getItem('savedProject'));
+    if (savedProject) {
+        const img = new Image();
+        img.onload = function() {
+            currentImage = img;
+            originalImage = img;
+            overlays.splice(0, overlays.length, ...savedProject.overlays);
+            annotations.splice(0, annotations.length, ...savedProject.annotations);
+            scale = savedProject.scale;
+            translateX = savedProject.translateX;
+            translateY = savedProject.translateY;
+            flip = savedProject.flip;
+            invert = savedProject.invert;
+            drawImageWithOverlays(img);
+        }
+        img.src = savedProject.image;
+    }
+}
+
+// Layer Management
+function moveLayerUp() {
+    const index = overlays.indexOf(currentOverlay);
+    if (index > 0) {
+        const temp = overlays[index - 1];
+        overlays[index - 1] = currentOverlay;
+        overlays[index] = temp;
+        drawImageWithOverlays(currentImage);
+    }
+}
+
+function moveLayerDown() {
+    const index = overlays.indexOf(currentOverlay);
+    if (index < overlays.length - 1) {
+        const temp = overlays[index + 1];
+        overlays[index + 1] = currentOverlay;
+        overlays[index] = temp;
+        drawImageWithOverlays(currentImage);
+    }
+}
