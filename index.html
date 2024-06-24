@@ -32,6 +32,57 @@
                     <button onclick="moveLayerUp()" class="btn btn-secondary">Move Layer Up</button>
                     <button onclick="moveLayerDown()" class="btn btn-secondary">Move Layer Down</button>
                 </div>
+                <div id="image-editing-tools" class="mt-3">
+                    <button onclick="cropImage()" class="btn btn-secondary">Crop Image</button>
+                    <button onclick="removeBackground()" class="btn btn-secondary">Remove Background</button>
+                    <button onclick="adjustExposure()" class="btn btn-secondary">Exposure</button>
+                    <button onclick="adjustBrilliance()" class="btn btn-secondary">Brilliance</button>
+                    <button onclick="adjustHighlights()" class="btn btn-secondary">Highlights</button>
+                    <button onclick="adjustShadows()" class="btn btn-secondary">Shadows</button>
+                    <button onclick="adjustContrast()" class="btn btn-secondary">Contrast</button>
+                    <button onclick="adjustBrightness()" class="btn btn-secondary">Brightness</button>
+                    <button onclick="adjustBlackPoint()" class="btn btn-secondary">Black Point</button>
+                    <button onclick="adjustSaturation()" class="btn btn-secondary">Saturation</button>
+                    <button onclick="adjustVibrance()" class="btn btn-secondary">Vibrance</button>
+                    <button onclick="adjustWarmth()" class="btn btn-secondary">Warmth</button>
+                    <button onclick="adjustTint()" class="btn btn-secondary">Tint</button>
+                    <button onclick="adjustSharpness()" class="btn btn-secondary">Sharpness</button>
+                    <button onclick="adjustDefinition()" class="btn btn-secondary">Definition</button>
+                    <button onclick="adjustNoiseReduction()" class="btn btn-secondary">Noise Reduction</button>
+                    <button onclick="adjustVignette()" class="btn btn-secondary">Vignette</button>
+                </div>
+                <div id="basic-tools" class="mt-3">
+                    <button onclick="useBrush()" class="btn btn-secondary">Brush</button>
+                    <button onclick="usePencil()" class="btn btn-secondary">Pencil</button>
+                    <button onclick="useEraser()" class="btn btn-secondary">Eraser</button>
+                    <button onclick="useMarquee()" class="btn btn-secondary">Marquee</button>
+                </div>
+                <div id="selection-tools" class="mt-3">
+                    <button onclick="selectArea()" class="btn btn-secondary">Select Area</button>
+                </div>
+                <div id="filters-effects" class="mt-3">
+                    <button onclick="applyBlur()" class="btn btn-secondary">Blur</button>
+                    <button onclick="applyPainterly()" class="btn btn-secondary">Painterly</button>
+                    <button onclick="applyDistortion()" class="btn btn-secondary">Distortion</button>
+                    <button onclick="applyTexture()" class="btn btn-secondary">Texture</button>
+                </div>
+                <div id="retouching-tools" class="mt-3">
+                    <button onclick="correctShadows()" class="btn btn-secondary">Correct Shadows</button>
+                    <button onclick="retouchLight()" class="btn btn-secondary">Retouch Light</button>
+                </div>
+                <div id="collage-tools" class="mt-3">
+                    <button onclick="createCollage()" class="btn btn-secondary">Create Collage</button>
+                </div>
+                <div id="background-extension" class="mt-3">
+                    <button onclick="extendBackground()" class="btn btn-secondary">Extend Background</button>
+                </div>
+                <div id="one-step-edits" class="mt-3">
+                    <button onclick="applyPreset()" class="btn btn-secondary">Apply Preset</button>
+                    <button onclick="removeObjects()" class="btn btn-secondary">Remove Objects</button>
+                    <button onclick="cropAndRotate()" class="btn btn-secondary">Crop and Rotate</button>
+                    <button onclick="adjustPerspectives()" class="btn btn-secondary">Adjust Perspectives</button>
+                    <button onclick="selectElements()" class="btn btn-secondary">Select Elements</button>
+                </div>
                 <canvas id="canvas" class="mt-3"></canvas>
             </div>
         </div>
