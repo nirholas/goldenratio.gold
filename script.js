@@ -208,6 +208,7 @@ function addOverlay(src) {
     };
     overlays.push(overlay);
     currentOverlay = overlay;
+    pushAction({ type: 'addOverlay', overlay });
     drawImageWithOverlays(currentImage);
 }
 
@@ -226,6 +227,7 @@ function addTextOverlay() {
         };
         textOverlays.push(textOverlay);
         currentTextOverlay = textOverlay;
+        pushAction({ type: 'addTextOverlay', textOverlay });
         drawImageWithOverlays(currentImage);
     }
 }
@@ -267,11 +269,13 @@ function applyFilter(filter) {
 
 function flipAxis() {
     flip = !flip;
+    pushAction({ type: 'flipAxis', state: flip });
     drawImageWithOverlays(currentImage);
 }
 
 function invertColors() {
     invert = !invert;
+    pushAction({ type: 'invertColors', state: invert });
     drawImageWithOverlays(currentImage);
 }
 
@@ -286,6 +290,7 @@ function resetCanvas() {
     currentOverlay = null;
     currentTextOverlay = null;
     currentImage = originalImage;
+    pushAction({ type: 'resetCanvas' });
     drawImageWithOverlays(currentImage);
 }
 
@@ -317,6 +322,7 @@ document.getElementById('addMiladyRatioBtn').addEventListener('click', () => add
 document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addOverlay('eyes.png'), false);
 document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
 document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
+document.getElementById('addTextBtn').addEventListener('click', addTextOverlay, false);
 
 // Event listener for swipe gestures
 let touchstartX = 0;
@@ -353,8 +359,26 @@ function pushAction(action) {
 function undo() {
     if (actionIndex >= 0) {
         const action = actionStack[actionIndex];
-        // Perform undo operation based on action
+        // Perform undo operation based on action type
+        switch(action.type) {
+            case 'addOverlay':
+                overlays.pop();
+                break;
+            case 'addTextOverlay':
+                textOverlays.pop();
+                break;
+            case 'flipAxis':
+                flip = !action.state;
+                break;
+            case 'invertColors':
+                invert = !action.state;
+                break;
+            case 'resetCanvas':
+                resetCanvas();
+                break;
+        }
         actionIndex--;
+        drawImageWithOverlays(currentImage);
     }
 }
 
@@ -362,7 +386,25 @@ function redo() {
     if (actionIndex < actionStack.length - 1) {
         actionIndex++;
         const action = actionStack[actionIndex];
-        // Perform redo operation based on action
+        // Perform redo operation based on action type
+        switch(action.type) {
+            case 'addOverlay':
+                overlays.push(action.overlay);
+                break;
+            case 'addTextOverlay':
+                textOverlays.push(action.textOverlay);
+                break;
+            case 'flipAxis':
+                flip = action.state;
+                break;
+            case 'invertColors':
+                invert = action.state;
+                break;
+            case 'resetCanvas':
+                resetCanvas();
+                break;
+        }
+        drawImageWithOverlays(currentImage);
     }
 }
 
