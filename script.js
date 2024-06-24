@@ -6,15 +6,15 @@ let flip = false;
 let invert = false;
 let originalImage = null;
 const overlays = [];
-const overlayImgSrc = 'overlay.png';  // Path to your golden ratio overlay image
+const overlayImgSrc = 'overlay.png';  // Default overlay image
 let currentOverlay = null;
-
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
 
 // Variables for touch gestures
 let initialDistance = 0;
 let initialAngle = 0;
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
 canvas.addEventListener('mousedown', (e) => {
     if (isOverlaySelected(e)) {
@@ -168,19 +168,20 @@ function drawOverlay(ctx, overlay) {
     ctx.scale(overlay.scale, overlay.scale);
     ctx.rotate(overlay.rotation * Math.PI / 180);
     const img = new Image();
-    img.src = overlayImgSrc;
+    img.src = overlay.src;
     ctx.drawImage(img, 0, 0, overlay.width, overlay.height);
     ctx.restore();
 }
 
-function addOverlay() {
+function addOverlay(src) {
     const overlay = {
         x: 0,
         y: 0,
         scale: 1,
         rotation: 0,
         width: canvas.width,
-        height: canvas.height
+        height: canvas.height,
+        src: src
     };
     overlays.push(overlay);
     currentOverlay = overlay;
@@ -260,7 +261,9 @@ function toggleFullScreen() {
 }
 
 document.getElementById('upload').addEventListener('change', handleImage, false);
-document.getElementById('addOverlayBtn').addEventListener('click', addOverlay, false);
+document.getElementById('addOverlayBtn').addEventListener('click', () => addOverlay('overlay.png'), false);
+document.getElementById('addMiladyRatioBtn').addEventListener('click', () => addOverlay('miladyratio.png'), false);
+document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addOverlay('eyes.jpg'), false);
 document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
 document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
 document.getElementById('saveBtn').addEventListener('click', saveProject, false);
