@@ -6,15 +6,16 @@ let flip = false;
 let invert = false;
 let originalImage = null;
 const overlays = [];
-const overlayImgSrc = 'overlay.png';  // Default overlay image
+const textOverlays = [];
 let currentOverlay = null;
+let currentTextOverlay = null;
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
 // Variables for touch gestures
 let initialDistance = 0;
 let initialAngle = 0;
-
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
 
 canvas.addEventListener('mousedown', (e) => {
     if (isOverlaySelected(e)) {
@@ -41,6 +42,11 @@ canvas.addEventListener('mousemove', (e) => {
             currentOverlay.y += e.clientY - startY;
             startX = e.clientX;
             startY = e.clientY;
+        } else if (currentTextOverlay) {
+            currentTextOverlay.x += e.clientX - startX;
+            currentTextOverlay.y += e.clientY - startY;
+            startX = e.clientX;
+            startY = e.clientY;
         } else {
             translateX = e.clientX - startX;
             translateY = e.clientY - startY;
@@ -55,6 +61,9 @@ canvas.addEventListener('wheel', (e) => {
     if (currentOverlay) {
         currentOverlay.scale += zoom;
         currentOverlay.scale = Math.min(Math.max(0.5, currentOverlay.scale), 3);
+    } else if (currentTextOverlay) {
+        currentTextOverlay.fontSize += zoom * 10;
+        currentTextOverlay.fontSize = Math.min(Math.max(10, currentTextOverlay.fontSize), 100);
     } else {
         scale += zoom;
         scale = Math.min(Math.max(0.5, scale), 3);
@@ -81,6 +90,11 @@ canvas.addEventListener('touchmove', (e) => {
         if (currentOverlay) {
             currentOverlay.x += touch.clientX - startX;
             currentOverlay.y += touch.clientY - startY;
+            startX = touch.clientX;
+            startY = touch.clientY;
+        } else if (currentTextOverlay) {
+            currentTextOverlay.x += touch.clientX - startX;
+            currentTextOverlay.y += touch.clientY - startY;
             startX = touch.clientX;
             startY = touch.clientY;
         } else {
@@ -156,6 +170,7 @@ function drawImageWithOverlays(img) {
     }
     ctx.drawImage(img, 0, 0, width, height);
     overlays.forEach(overlay => drawOverlay(ctx, overlay));
+    textOverlays.forEach(textOverlay => drawTextOverlay(ctx, textOverlay));
     if (invert) {
         invertColorsOnCanvas();
     }
@@ -170,6 +185,14 @@ function drawOverlay(ctx, overlay) {
     const img = new Image();
     img.src = overlay.src;
     ctx.drawImage(img, 0, 0, overlay.width, overlay.height);
+    ctx.restore();
+}
+
+function drawTextOverlay(ctx, textOverlay) {
+    ctx.save();
+    ctx.font = `${textOverlay.fontSize}px ${textOverlay.fontFamily}`;
+    ctx.fillStyle = textOverlay.color;
+    ctx.fillText(textOverlay.text, textOverlay.x, textOverlay.y);
     ctx.restore();
 }
 
@@ -188,11 +211,30 @@ function addOverlay(src) {
     drawImageWithOverlays(currentImage);
 }
 
+function addTextOverlay() {
+    const textInput = document.getElementById('textInput').value;
+    const fontSize = document.getElementById('fontSizeSlider').value;
+    const fontFamily = document.getElementById('fontSelect').value;
+    if (textInput.trim() !== "") {
+        const textOverlay = {
+            text: textInput,
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            fontSize: fontSize,
+            fontFamily: fontFamily,
+            color: "#000000"
+        };
+        textOverlays.push(textOverlay);
+        currentTextOverlay = textOverlay;
+        drawImageWithOverlays(currentImage);
+    }
+}
+
 function isOverlaySelected(event) {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    // Check if the click is within any overlay bounds
+
     return overlays.some(overlay => {
         const overlayX = overlay.x;
         const overlayY = overlay.y;
@@ -201,6 +243,13 @@ function isOverlaySelected(event) {
         const isSelected = x >= overlayX && x <= overlayX + overlayWidth &&
                            y >= overlayY && y <= overlayY + overlayHeight;
         if (isSelected) currentOverlay = overlay;
+        return isSelected;
+    }) || textOverlays.some(textOverlay => {
+        const textWidth = ctx.measureText(textOverlay.text).width;
+        const textHeight = textOverlay.fontSize;
+        const isSelected = x >= textOverlay.x && x <= textOverlay.x + textWidth &&
+                           y >= textOverlay.y - textHeight && y <= textOverlay.y;
+        if (isSelected) currentTextOverlay = textOverlay;
         return isSelected;
     });
 }
@@ -233,7 +282,9 @@ function resetCanvas() {
     translateY = 0;
     scale = 1;
     overlays.length = 0;
+    textOverlays.length = 0;
     currentOverlay = null;
+    currentTextOverlay = null;
     currentImage = originalImage;
     drawImageWithOverlays(currentImage);
 }
@@ -266,8 +317,6 @@ document.getElementById('addMiladyRatioBtn').addEventListener('click', () => add
 document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addOverlay('eyes.png'), false);
 document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
 document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
-document.getElementById('saveBtn').addEventListener('click', saveProject, false);
-document.getElementById('loadBtn').addEventListener('click', loadProject, false);
 
 // Event listener for swipe gestures
 let touchstartX = 0;
@@ -325,59 +374,3 @@ document.addEventListener('keydown', (e) => {
         redo();
     }
 });
-
-// Save/Load Project Functionality
-function saveProject() {
-    const projectData = {
-        image: currentImage.src,
-        overlays: overlays,
-        annotations: annotations,
-        scale: scale,
-        translateX: translateX,
-        translateY: translateY,
-        flip: flip,
-        invert: invert,
-    };
-    localStorage.setItem('savedProject', JSON.stringify(projectData));
-}
-
-function loadProject() {
-    const savedProject = JSON.parse(localStorage.getItem('savedProject'));
-    if (savedProject) {
-        const img = new Image();
-        img.onload = function() {
-            currentImage = img;
-            originalImage = img;
-            overlays.splice(0, overlays.length, ...savedProject.overlays);
-            annotations.splice(0, annotations.length, ...savedProject.annotations);
-            scale = savedProject.scale;
-            translateX = savedProject.translateX;
-            translateY = savedProject.translateY;
-            flip = savedProject.flip;
-            invert = savedProject.invert;
-            drawImageWithOverlays(img);
-        }
-        img.src = savedProject.image;
-    }
-}
-
-// Layer Management
-function moveLayerUp() {
-    const index = overlays.indexOf(currentOverlay);
-    if (index > 0) {
-        const temp = overlays[index - 1];
-        overlays[index - 1] = currentOverlay;
-        overlays[index] = temp;
-        drawImageWithOverlays(currentImage);
-    }
-}
-
-function moveLayerDown() {
-    const index = overlays.indexOf(currentOverlay);
-    if (index < overlays.length - 1) {
-        const temp = overlays[index + 1];
-        overlays[index + 1] = currentOverlay;
-        overlays[index] = temp;
-        drawImageWithOverlays(currentImage);
-    }
-}
