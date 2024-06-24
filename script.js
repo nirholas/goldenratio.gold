@@ -266,8 +266,8 @@ document.getElementById('addMiladyRatioBtn').addEventListener('click', () => add
 document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addOverlay('eyes.png'), false);
 document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
 document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
-document.getElementById('saveBtn').addEventListener('click', saveProject, false);
-document.getElementById('loadBtn').addEventListener('click', loadProject, false);
+document.getElementById('undoBtn').addEventListener('click', undo, false);
+document.getElementById('redoBtn').addEventListener('click', redo, false);
 
 // Event listener for swipe gestures
 let touchstartX = 0;
@@ -317,67 +317,4 @@ function redo() {
     }
 }
 
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'z') {
-        undo();
-    }
-    if (e.ctrlKey && e.key === 'y') {
-        redo();
-    }
-});
-
-// Save/Load Project Functionality
-function saveProject() {
-    const projectData = {
-        image: currentImage.src,
-        overlays: overlays,
-        annotations: annotations,
-        scale: scale,
-        translateX: translateX,
-        translateY: translateY,
-        flip: flip,
-        invert: invert,
-    };
-    localStorage.setItem('savedProject', JSON.stringify(projectData));
-}
-
-function loadProject() {
-    const savedProject = JSON.parse(localStorage.getItem('savedProject'));
-    if (savedProject) {
-        const img = new Image();
-        img.onload = function() {
-            currentImage = img;
-            originalImage = img;
-            overlays.splice(0, overlays.length, ...savedProject.overlays);
-            annotations.splice(0, annotations.length, ...savedProject.annotations);
-            scale = savedProject.scale;
-            translateX = savedProject.translateX;
-            translateY = savedProject.translateY;
-            flip = savedProject.flip;
-            invert = savedProject.invert;
-            drawImageWithOverlays(img);
-        }
-        img.src = savedProject.image;
-    }
-}
-
-// Layer Management
-function moveLayerUp() {
-    const index = overlays.indexOf(currentOverlay);
-    if (index > 0) {
-        const temp = overlays[index - 1];
-        overlays[index - 1] = currentOverlay;
-        overlays[index] = temp;
-        drawImageWithOverlays(currentImage);
-    }
-}
-
-function moveLayerDown() {
-    const index = overlays.indexOf(currentOverlay);
-    if (index < overlays.length - 1) {
-        const temp = overlays[index + 1];
-        overlays[index + 1] = currentOverlay;
-        overlays[index] = temp;
-        drawImageWithOverlays(currentImage);
-    }
-}
+// Remove save and load project functionality
