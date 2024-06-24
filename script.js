@@ -6,7 +6,6 @@ let flip = false;
 let invert = false;
 let originalImage = null;
 const overlays = [];
-const overlayImgSrc = 'overlay.png';  // Default overlay image
 let currentOverlay = null;
 
 // Variables for touch gestures
@@ -316,8 +315,6 @@ function redo() {
         // Perform redo operation based on action
     }
 }
-
-// Remove save and load project functionality
 
 // Image Editing Functions
 function cropImage() {
