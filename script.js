@@ -323,6 +323,9 @@ document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addO
 document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
 document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
 document.getElementById('addTextBtn').addEventListener('click', addTextOverlay, false);
+document.getElementById('openTabBtn').addEventListener('click', () => {
+    window.open('https://memedepot.com/d/golden-celestial-ratio', '_blank');
+});
 
 // Event listener for swipe gestures
 let touchstartX = 0;
