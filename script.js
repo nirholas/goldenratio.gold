@@ -18,13 +18,11 @@ let initialDistance = 0;
 let initialAngle = 0;
 
 canvas.addEventListener('mousedown', (e) => {
-    const handleIndex = getHandleUnderMouse(e);
-    if (handleIndex !== -1) {
-        resizing = true;
-        resizingHandle = handleIndex;
+    if (isOverlaySelected(e)) {
+        isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
-    } else if (isOverlaySelected(e)) {
+    } else {
         isDragging = true;
         startX = e.clientX - translateX;
         startY = e.clientY - translateY;
@@ -34,7 +32,6 @@ canvas.addEventListener('mousedown', (e) => {
 
 canvas.addEventListener('mouseup', () => {
     isDragging = false;
-    resizing = false;
     canvas.style.cursor = 'grab';
 });
 
@@ -53,29 +50,6 @@ canvas.addEventListener('mousemove', (e) => {
         } else {
             translateX = e.clientX - startX;
             translateY = e.clientY - startY;
-        }
-        drawImageWithOverlays(currentImage);
-    } else if (resizing) {
-        if (resizingHandle === 0) { // Top-left
-            currentOverlay.width += startX - e.clientX;
-            currentOverlay.height += startY - e.clientY;
-            startX = e.clientX;
-            startY = e.clientY;
-        } else if (resizingHandle === 1) { // Top-right
-            currentOverlay.width += e.clientX - startX;
-            currentOverlay.height += startY - e.clientY;
-            startX = e.clientX;
-            startY = e.clientY;
-        } else if (resizingHandle === 2) { // Bottom-left
-            currentOverlay.width += startX - e.clientX;
-            currentOverlay.height += e.clientY - startY;
-            startX = e.clientX;
-            startY = e.clientY;
-        } else if (resizingHandle === 3) { // Bottom-right
-            currentOverlay.width += e.clientX - startX;
-            currentOverlay.height += e.clientY - startY;
-            startX = e.clientX;
-            startY = e.clientY;
         }
         drawImageWithOverlays(currentImage);
     }
@@ -197,6 +171,9 @@ function drawImageWithOverlays(img) {
     ctx.drawImage(img, 0, 0, width, height);
     overlays.forEach(overlay => drawOverlay(ctx, overlay));
     textOverlays.forEach(textOverlay => drawTextOverlay(ctx, textOverlay));
+    if (invert) {
+        invertColorsOnCanvas();
+    }
     ctx.restore();
 }
 
@@ -207,43 +184,16 @@ function drawOverlay(ctx, overlay) {
     ctx.rotate(overlay.rotation * Math.PI / 180);
     const img = new Image();
     img.src = overlay.src;
-    img.onload = function() {
-        ctx.drawImage(img, 0, 0, overlay.width, overlay.height);
-        if (overlay.inverted) {
-            invertColorsOnOverlay(ctx, overlay.width, overlay.height);
-        }
-        drawResizeHandles(ctx, overlay);
-    };
+    ctx.drawImage(img, 0, 0, overlay.width, overlay.height);
     ctx.restore();
 }
 
-function drawResizeHandles(ctx, overlay) {
-    const handleSize = 8; // Size of the corner box
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; // Semi-transparent white
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Semi-transparent black
-    // Top-left corner
-    ctx.fillRect(-handleSize / 2, -handleSize / 2, handleSize, handleSize);
-    ctx.strokeRect(-handleSize / 2, -handleSize / 2, handleSize, handleSize);
-    // Top-right corner
-    ctx.fillRect(overlay.width - handleSize / 2, -handleSize / 2, handleSize, handleSize);
-    ctx.strokeRect(overlay.width - handleSize / 2, -handleSize / 2, handleSize, handleSize);
-    // Bottom-left corner
-    ctx.fillRect(-handleSize / 2, overlay.height - handleSize / 2, handleSize, handleSize);
-    ctx.strokeRect(-handleSize / 2, overlay.height - handleSize / 2, handleSize, handleSize);
-    // Bottom-right corner
-    ctx.fillRect(overlay.width - handleSize / 2, overlay.height - handleSize / 2, handleSize, handleSize);
-    ctx.strokeRect(overlay.width - handleSize / 2, overlay.height - handleSize / 2, handleSize, handleSize);
-}
-
-function invertColorsOnOverlay(ctx, width, height) {
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-        data[i] = 255 - data[i];       // Red
-        data[i + 1] = 255 - data[i + 1]; // Green
-        data[i + 2] = 255 - data[i + 2]; // Blue
-    }
-    ctx.putImageData(imageData, 0, 0);
+function drawTextOverlay(ctx, textOverlay) {
+    ctx.save();
+    ctx.font = `${textOverlay.fontSize}px ${textOverlay.fontFamily}`;
+    ctx.fillStyle = textOverlay.color;
+    ctx.fillText(textOverlay.text, textOverlay.x, textOverlay.y);
+    ctx.restore();
 }
 
 function addOverlay(src) {
@@ -254,11 +204,11 @@ function addOverlay(src) {
         rotation: 0,
         width: canvas.width,
         height: canvas.height,
-        src: src,
-        inverted: false // Add this line
+        src: src
     };
     overlays.push(overlay);
     currentOverlay = overlay;
+    pushAction({ type: 'addOverlay', overlay });
     drawImageWithOverlays(currentImage);
 }
 
@@ -277,6 +227,7 @@ function addTextOverlay() {
         };
         textOverlays.push(textOverlay);
         currentTextOverlay = textOverlay;
+        pushAction({ type: 'addTextOverlay', textOverlay });
         drawImageWithOverlays(currentImage);
     }
 }
@@ -312,16 +263,20 @@ function downloadImage() {
     link.click();
 }
 
+function applyFilter(filter) {
+    canvas.style.filter = filter;
+}
+
 function flipAxis() {
     flip = !flip;
+    pushAction({ type: 'flipAxis', state: flip });
     drawImageWithOverlays(currentImage);
 }
 
-function invertOverlayColors() {
-    if (currentOverlay) {
-        currentOverlay.inverted = !currentOverlay.inverted;
-        drawImageWithOverlays(currentImage);
-    }
+function invertColors() {
+    invert = !invert;
+    pushAction({ type: 'invertColors', state: invert });
+    drawImageWithOverlays(currentImage);
 }
 
 function resetCanvas() {
@@ -335,15 +290,23 @@ function resetCanvas() {
     currentOverlay = null;
     currentTextOverlay = null;
     currentImage = originalImage;
+    pushAction({ type: 'resetCanvas' });
     drawImageWithOverlays(currentImage);
 }
 
-document.getElementById('upload').addEventListener('change', handleImage, false);
-document.getElementById('addOverlayBtn').addEventListener('click', () => addOverlay('overlay.png'), false);
-document.getElementById('addMiladyRatioBtn').addEventListener('click', () => addOverlay('miladyratio.png'), false);
-document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addOverlay('eyes.png'), false);
-document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
-document.getElementById('fullscreenBtn').addEventListener('click', () => {
+function invertColorsOnCanvas() {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        data[i] = 255 - data[i];       // Red
+        data[i + 1] = 255 - data[i + 1]; // Green
+        data[i + 2] = 255 - data[i + 2]; // Blue
+    }
+    ctx.putImageData(imageData, 0, 0);
+}
+
+// Function to toggle fullscreen mode for the canvas
+function toggleFullScreen() {
     if (!document.fullscreenElement) {
         canvas.requestFullscreen().catch(err => {
             alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
@@ -351,26 +314,36 @@ document.getElementById('fullscreenBtn').addEventListener('click', () => {
     } else {
         document.exitFullscreen();
     }
-});
+}
+
+document.getElementById('upload').addEventListener('change', handleImage, false);
+document.getElementById('addOverlayBtn').addEventListener('click', () => addOverlay('overlay.png'), false);
+document.getElementById('addMiladyRatioBtn').addEventListener('click', () => addOverlay('miladyratio.png'), false);
+document.getElementById('addMiladyEyesBtn').addEventListener('click', () => addOverlay('eyes.png'), false);
+document.getElementById('downloadBtn').addEventListener('click', downloadImage, false);
+document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
 document.getElementById('addTextBtn').addEventListener('click', addTextOverlay, false);
-document.getElementById('addToCollectionBtn').addEventListener('click', function() {
-    window.location.href = 'https://memedepot.com/d/golden-celestial-ratio';
+
+// Event listener for swipe gestures
+let touchstartX = 0;
+let touchendX = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+    touchstartX = e.changedTouches[0].screenX;
 });
 
-function getHandleUnderMouse(event) {
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    const handleSize = 10;
-    const areas = [
-        {x: currentOverlay.x - handleSize / 2, y: currentOverlay.y - handleSize / 2}, // Top-left
-        {x: currentOverlay.x + currentOverlay.width - handleSize / 2, y: currentOverlay.y - handleSize / 2}, // Top-right
-        {x: currentOverlay.x - handleSize / 2, y: currentOverlay.y + currentOverlay.height - handleSize / 2}, // Bottom-left
-        {x: currentOverlay.x + currentOverlay.width - handleSize / 2, y: currentOverlay.y + currentOverlay.height - handleSize / 2} // Bottom-right
-    ];
-    return areas.findIndex(area => 
-        mouseX > area.x && mouseX < area.x + handleSize &&
-        mouseY > area.y && mouseY < area.y + handleSize);
+canvas.addEventListener('touchend', (e) => {
+    touchendX = e.changedTouches[0].screenX;
+    handleSwipeGesture();
+});
+
+function handleSwipeGesture() {
+    if (touchendX < touchstartX) {
+        // Swipe left action
+    }
+    if (touchendX > touchstartX) {
+        // Swipe right action
+    }
 }
 
 // Undo/Redo functionality
